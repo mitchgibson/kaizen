@@ -131,91 +131,65 @@
   flex: 1;
 }
 
-.kaizen-open-btn-top {
-  padding: 6px 10px;
+/* Ghost style done button - just icon, no background */
+.kaizen-done-btn-small {
+  padding: 0;
   background-color: transparent;
   color: var(--text-muted);
-  border: 1px solid var(--divider-color);
-  border-radius: 6px;
-  font-size: 1em;
+  border: none;
+  border-radius: 0;
+  font-size: 1.1em;
+  line-height: 1;
   cursor: pointer;
   transition: all 0.2s ease;
   flex-shrink: 0;
-}
-
-.kaizen-open-btn-top:hover {
-  background-color: var(--interactive-hover);
-  color: var(--text-normal);
-  border-color: var(--interactive-accent);
-}
-
-.kaizen-card-metadata {
+  width: auto;
+  height: auto;
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.kaizen-metadata-label {
-  display: inline-flex;
   align-items: center;
-  padding: 4px 10px;
-  background-color: var(--background-primary);
-  border: 1px solid var(--divider-color);
-  border-radius: 6px;
-  font-size: 0.85em;
-  color: var(--text-muted);
-  cursor: pointer;
-  transition: all 0.2s ease;
+  justify-content: center;
 }
 
-.kaizen-metadata-label:hover {
-  background-color: var(--interactive-hover);
-  border-color: var(--interactive-accent);
-  color: var(--text-normal);
+.kaizen-done-btn-small:hover {
+  color: var(--interactive-accent);
+  transform: scale(1.15);
 }
 
-.kaizen-metadata-label.empty {
-  border-style: dashed;
-  opacity: 0.7;
+.kaizen-done-btn-small.done {
+  color: var(--color-green);
 }
 
-.kaizen-metadata-label.empty:hover {
-  opacity: 1;
+.kaizen-done-btn-small.done:hover {
+  opacity: 0.8;
+  transform: scale(1.1);
 }
 
-.kaizen-meta-icon {
-  margin-right: 4px;
-}
 
-.kaizen-meta-text {
-  font-weight: 500;
-}
-
-/* Stats Grid */
+/* Stats Grid - Reduced size */
 .kaizen-card-stats {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-  margin-bottom: 16px;
+  gap: 8px;
+  margin-bottom: 12px;
 }
 
 .kaizen-stat-item {
   text-align: center;
-  padding: 10px;
+  padding: 8px 6px;
   background-color: var(--background-primary);
-  border-radius: 8px;
+  border-radius: 6px;
   border: 1px solid var(--divider-color);
 }
 
 .kaizen-stat-value {
-  font-size: 1.5em;
+  font-size: 1.2em;
   font-weight: 700;
   color: var(--text-normal);
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
 .kaizen-stat-label {
-  font-size: 0.75em;
+  font-size: 0.65em;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   color: var(--text-muted);
@@ -230,55 +204,79 @@
   color: var(--color-purple);
 }
 
-/* Card Actions */
-.kaizen-card-actions {
+/* Card Footer */
+.kaizen-card-footer {
   display: flex;
-  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
   gap: 8px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--divider-color);
 }
 
-/* Large Check Button */
-.kaizen-check-btn-large {
-  width: 100%;
-  padding: 14px;
-  background-color: var(--interactive-normal);
-  color: var(--text-normal);
-  border: 2px solid var(--divider-color);
-  border-radius: 8px;
-  font-size: 1em;
-  font-weight: 600;
+.kaizen-footer-left {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.kaizen-footer-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 8px;
+  background-color: transparent;
+  border: 1px solid var(--divider-color);
+  border-radius: 4px;
+  font-size: 0.7em;
+  color: var(--text-muted);
   cursor: pointer;
   transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
 }
 
-.kaizen-check-btn-large:hover {
+.kaizen-footer-label:hover {
   background-color: var(--interactive-hover);
   border-color: var(--interactive-accent);
-  transform: scale(1.02);
+  color: var(--text-normal);
 }
 
-.kaizen-check-btn-large.done {
-  background-color: var(--color-green);
-  color: white;
-  border-color: var(--color-green);
+.kaizen-footer-label.empty {
+  border-style: dashed;
+  opacity: 0.6;
 }
 
-.kaizen-check-btn-large.done:hover {
-  opacity: 0.9;
-  transform: scale(1);
+.kaizen-footer-label.empty:hover {
+  opacity: 1;
 }
 
-.kaizen-check-icon {
-  font-size: 1.3em;
+.kaizen-footer-icon {
+  font-size: 1em;
   line-height: 1;
 }
 
-.kaizen-check-label {
+.kaizen-footer-text {
+  font-weight: 500;
   line-height: 1;
+}
+
+.kaizen-open-btn-footer {
+  padding: 4px 8px;
+  background-color: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--divider-color);
+  border-radius: 4px;
+  font-size: 1em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.kaizen-open-btn-footer:hover {
+  background-color: var(--interactive-hover);
+  color: var(--text-normal);
+  border-color: var(--interactive-accent);
 }
 
 /* Secondary Actions */
@@ -468,53 +466,56 @@
   font-weight: 600;
 }
 
-.kaizen-in-sidebar .kaizen-open-btn-top {
-  padding: 4px 8px;
-  font-size: 0.9em;
-}
-
-/* Hide metadata in sidebar for more space */
-.kaizen-in-sidebar .kaizen-card-metadata {
-  display: none;
+.kaizen-in-sidebar .kaizen-done-btn-small {
+  font-size: 1em;
+  border-radius: 25%;
+  padding: 4px;
 }
 
 /* Compact Stats Grid */
 .kaizen-in-sidebar .kaizen-card-stats {
   grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
-  margin-bottom: 8px;
+  gap: 4px;
+  margin-bottom: 6px;
 }
 
 .kaizen-in-sidebar .kaizen-stat-item {
-  padding: 6px 4px;
+  padding: 4px 2px;
   background-color: transparent;
   border: none;
 }
 
 .kaizen-in-sidebar .kaizen-stat-value {
-  font-size: 1.1em;
+  font-size: 1em;
   font-weight: 600;
-  margin-bottom: 2px;
+  margin-bottom: 1px;
 }
 
 .kaizen-in-sidebar .kaizen-stat-label {
+  font-size: 0.6em;
+  letter-spacing: 0.2px;
+}
+
+/* Compact Footer */
+.kaizen-in-sidebar .kaizen-card-footer {
+  gap: 4px;
+  margin-top: 6px;
+  padding-top: 6px;
+}
+
+.kaizen-in-sidebar .kaizen-footer-left {
+  gap: 4px;
+}
+
+.kaizen-in-sidebar .kaizen-footer-label {
+  padding: 2px 6px;
   font-size: 0.65em;
-  letter-spacing: 0.3px;
+  gap: 2px;
 }
 
-/* Compact Check Button */
-.kaizen-in-sidebar .kaizen-check-btn-large {
-  padding: 8px 12px;
+.kaizen-in-sidebar .kaizen-open-btn-footer {
+  padding: 3px 6px;
   font-size: 0.9em;
-  border-width: 1px;
-}
-
-.kaizen-in-sidebar .kaizen-check-icon {
-  font-size: 1.1em;
-}
-
-.kaizen-in-sidebar .kaizen-check-btn-large:hover {
-  transform: none;
 }
 
 /* Compact Empty State */

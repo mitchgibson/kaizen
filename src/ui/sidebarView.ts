@@ -124,7 +124,7 @@ export const createSidebarView = (habitService: HabitService) => {
         card.addClass('done-today');
       }
 
-      // Card header with open button
+      // Card header with title and done button
       const cardHeader = card.createDiv('kaizen-card-header');
       const titleRow = cardHeader.createDiv('kaizen-title-row');
       
@@ -133,78 +133,12 @@ export const createSidebarView = (habitService: HabitService) => {
         cls: 'kaizen-card-title',
       });
 
-      const openBtn = titleRow.createEl('button', {
-        text: '📝',
-        cls: 'kaizen-open-btn-top',
-        attr: { 'aria-label': 'Open note' },
+      // Small done button in top right
+      const checkBtn = titleRow.createEl('button', {
+        cls: doneToday ? 'kaizen-done-btn-small done' : 'kaizen-done-btn-small',
+        attr: { 'aria-label': doneToday ? 'Done today' : 'Mark done' },
       });
-
-      openBtn.onclick = async (e) => {
-        e.stopPropagation();
-        await this.openHabitNote(habit.id);
-      };
-
-      // Trigger and Schedule metadata (always shown)
-      const metadata = cardHeader.createDiv('kaizen-card-metadata');
-      
-      // Trigger button
-      const triggerLabel = metadata.createEl('button', {
-        cls: habit.trigger ? 'kaizen-metadata-label' : 'kaizen-metadata-label empty',
-      });
-      triggerLabel.createEl('span', { text: '🎯 ', cls: 'kaizen-meta-icon' });
-      triggerLabel.createEl('span', {
-        text: habit.trigger || 'Add trigger',
-        cls: 'kaizen-meta-text',
-      });
-      
-      triggerLabel.onclick = async (e) => {
-        e.stopPropagation();
-        await this.openHabitNote(habit.id, 'trigger');
-      };
-
-      // Schedule button
-      const scheduleLabel = metadata.createEl('button', {
-        cls: habit.schedule ? 'kaizen-metadata-label' : 'kaizen-metadata-label empty',
-      });
-      scheduleLabel.createEl('span', { text: '📅 ', cls: 'kaizen-meta-icon' });
-      scheduleLabel.createEl('span', {
-        text: habit.schedule || 'Add schedule',
-        cls: 'kaizen-meta-text',
-      });
-      
-      scheduleLabel.onclick = async (e) => {
-        e.stopPropagation();
-        await this.openHabitNote(habit.id, 'schedule');
-      };
-
-      // Stats grid
-      const statsGrid = card.createDiv('kaizen-card-stats');
-      
-      const count = deriveCount(habit);
-      const streak = currentStreak(habit);
-      const best = longestStreak(habit);
-
-      this.createStatItem(statsGrid, 'Total', count.toString(), 'kaizen-stat-total');
-      this.createStatItem(statsGrid, 'Streak', streak.toString(), 'kaizen-stat-streak');
-      this.createStatItem(statsGrid, 'Best', best.toString(), 'kaizen-stat-best');
-
-      // Actions
-      const actions = card.createDiv('kaizen-card-actions');
-
-      // Check button (primary action)
-      const checkBtn = actions.createEl('button', {
-        cls: 'kaizen-check-btn-large',
-      });
-      
-      const checkIcon = checkBtn.createEl('span', { cls: 'kaizen-check-icon' });
-      checkIcon.textContent = doneToday ? '✓' : '○';
-      
-      const checkLabel = checkBtn.createEl('span', { cls: 'kaizen-check-label' });
-      checkLabel.textContent = doneToday ? 'Done today' : 'Mark done';
-
-      if (doneToday) {
-        checkBtn.addClass('done');
-      }
+      checkBtn.textContent = doneToday ? '✓' : '○';
 
       checkBtn.onclick = async (e) => {
         e.stopPropagation();
@@ -216,14 +150,15 @@ export const createSidebarView = (habitService: HabitService) => {
         // Optimistic update
         checkBtn.addClass('done');
         checkBtn.disabled = true;
-        checkIcon.textContent = '✓';
-        checkLabel.textContent = 'Done today';
+        checkBtn.textContent = '✓';
         card.addClass('done-today');
         
         // Update stats optimistically
+        const count = deriveCount(habit);
+        const streak = currentStreak(habit);
         const newCount = count + 1;
         const newStreak = streak + 1;
-        const statsValues = statsGrid.querySelectorAll('.kaizen-stat-value');
+        const statsValues = card.querySelectorAll('.kaizen-stat-value');
         if (statsValues[0]) statsValues[0].textContent = newCount.toString();
         if (statsValues[1]) statsValues[1].textContent = newStreak.toString();
         
@@ -242,13 +177,71 @@ export const createSidebarView = (habitService: HabitService) => {
           // Revert optimistic update
           checkBtn.removeClass('done');
           checkBtn.disabled = false;
-          checkIcon.textContent = '○';
-          checkLabel.textContent = 'Mark done';
+          checkBtn.textContent = '○';
           card.removeClass('done-today');
           // Revert stats
           if (statsValues[0]) statsValues[0].textContent = count.toString();
           if (statsValues[1]) statsValues[1].textContent = streak.toString();
         }
+      };
+
+      // Stats grid
+      const statsGrid = card.createDiv('kaizen-card-stats');
+      
+      const count = deriveCount(habit);
+      const streak = currentStreak(habit);
+      const best = longestStreak(habit);
+
+      this.createStatItem(statsGrid, 'Total', count.toString(), 'kaizen-stat-total');
+      this.createStatItem(statsGrid, 'Streak', streak.toString(), 'kaizen-stat-streak');
+      this.createStatItem(statsGrid, 'Best', best.toString(), 'kaizen-stat-best');
+
+      // Footer with trigger, schedule, and open note button
+      const footer = card.createDiv('kaizen-card-footer');
+      
+      // Left side: trigger and schedule labels
+      const footerLeft = footer.createDiv('kaizen-footer-left');
+      
+      // Trigger label
+      const triggerLabel = footerLeft.createEl('button', {
+        cls: habit.trigger ? 'kaizen-footer-label' : 'kaizen-footer-label empty',
+      });
+      triggerLabel.createEl('span', { text: '🎯', cls: 'kaizen-footer-icon' });
+      triggerLabel.createEl('span', {
+        text: habit.trigger || 'Add trigger',
+        cls: 'kaizen-footer-text',
+      });
+      
+      triggerLabel.onclick = async (e) => {
+        e.stopPropagation();
+        await this.openHabitNote(habit.id, 'trigger');
+      };
+
+      // Schedule label
+      const scheduleLabel = footerLeft.createEl('button', {
+        cls: habit.schedule ? 'kaizen-footer-label' : 'kaizen-footer-label empty',
+      });
+      scheduleLabel.createEl('span', { text: '📅', cls: 'kaizen-footer-icon' });
+      scheduleLabel.createEl('span', {
+        text: habit.schedule || 'Add schedule',
+        cls: 'kaizen-footer-text',
+      });
+      
+      scheduleLabel.onclick = async (e) => {
+        e.stopPropagation();
+        await this.openHabitNote(habit.id, 'schedule');
+      };
+
+      // Right side: open note button
+      const openBtn = footer.createEl('button', {
+        text: '📝',
+        cls: 'kaizen-open-btn-footer',
+        attr: { 'aria-label': 'Open note' },
+      });
+
+      openBtn.onclick = async (e) => {
+        e.stopPropagation();
+        await this.openHabitNote(habit.id);
       };
 
     }
@@ -325,6 +318,18 @@ export const createSidebarView = (habitService: HabitService) => {
           }
         }
       });
+
+      // Listen for file deletions
+      this.registerEvent(this.app.vault.on('delete', async (file) => {
+        const habitIds = this.habits.map(h => h.id);
+        if (habitIds.includes(file.path)) {
+          console.log('[Kaizen] Habit file deleted:', file.path);
+          // Remove from habits list
+          this.habits = this.habits.filter(h => h.id !== file.path);
+          // Re-render to show updated list
+          this.render();
+        }
+      }));
 
       // Also listen for metadata changes (frontmatter)
       this.app.metadataCache.on('changed', async (file) => {
