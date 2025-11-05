@@ -66,6 +66,19 @@ export class KaizenSettingsTab extends PluginSettingTab {
           })
       );
 
+    // Open in sidebar toggle
+    new Setting(containerEl)
+      .setName('Open in Sidebar')
+      .setDesc('When enabled, the habit view will open in the right sidebar with a minimalistic design.')
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.openInSidebar)
+          .onChange(async (value) => {
+            this.plugin.settings.openInSidebar = value;
+            await this.plugin.saveSettings();
+          })
+      );
+
     // Developer logging toggle
     new Setting(containerEl)
       .setName('Developer Logging')

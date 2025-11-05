@@ -33,10 +33,8 @@ export default class KaizenPlugin extends Plugin {
     });
 
     // Ribbon icon
-    this.addRibbonIcon('check-circle', 'Kaizen Habits', (evt: MouseEvent) => {
-      this.app.workspace.getLeaf('split', 'vertical').setViewState({
-        type: VIEW_TYPE_SIDEBAR,
-      });
+    this.addRibbonIcon('check-circle', 'Kaizen Habits', async (evt: MouseEvent) => {
+      await this.openHabitView();
     });
 
     // Register views
@@ -56,10 +54,8 @@ export default class KaizenPlugin extends Plugin {
     this.addCommand({
       id: 'kaizen-open-sidebar',
       name: 'Open Kaizen Sidebar',
-      callback: () => {
-        this.app.workspace.getLeaf('split', 'vertical').setViewState({
-          type: VIEW_TYPE_SIDEBAR,
-        });
+      callback: async () => {
+        await this.openHabitView();
       },
     });
 
@@ -199,5 +195,33 @@ export default class KaizenPlugin extends Plugin {
 
   async saveSettings() {
     await this.saveData(this.settings);
+  }
+
+  async openHabitView() {
+    const { workspace } = this.app;
+    
+    let leaf = workspace.getLeavesOfType(VIEW_TYPE_SIDEBAR)[0];
+    
+    if (!leaf) {
+      if (this.settings.openInSidebar) {
+        // Open in right sidebar
+        const rightLeaf = workspace.getRightLeaf(false);
+        if (rightLeaf) {
+          leaf = rightLeaf;
+        } else {
+          leaf = workspace.getLeaf('split', 'vertical');
+        }
+      } else {
+        // Open in main area
+        leaf = workspace.getLeaf('split', 'vertical');
+      }
+      
+      await leaf.setViewState({
+        type: VIEW_TYPE_SIDEBAR,
+        active: true,
+      });
+    }
+    
+    workspace.revealLeaf(leaf);
   }
 }

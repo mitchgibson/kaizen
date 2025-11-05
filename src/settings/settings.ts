@@ -7,6 +7,7 @@ export interface KaizenSettings {
   deriveCountFromHistory: boolean;
   habitField: string;
   devLoggingEnabled: boolean;
+  openInSidebar: boolean;
 }
 
 export const DEFAULT_SETTINGS: KaizenSettings = {
@@ -14,4 +15,5 @@ export const DEFAULT_SETTINGS: KaizenSettings = {
   deriveCountFromHistory: true,
   habitField: 'habit',
   devLoggingEnabled: false,
+  openInSidebar: true, // open in right sidebar by default
 };

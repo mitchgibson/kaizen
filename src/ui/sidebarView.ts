@@ -13,6 +13,7 @@ export const createSidebarView = (habitService: HabitService) => {
   class SidebarView extends ItemView {
     private habits: Habit[] = [];
     private fileWatcherRef: any = null;
+    private isInSidebar: boolean = false;
 
     constructor(leaf: WorkspaceLeaf) {
       super(leaf);
@@ -41,13 +42,32 @@ export const createSidebarView = (habitService: HabitService) => {
 
     async loadAndRender() {
       this.habits = await habitService.listHabits();
+      this.detectLocation();
       this.render();
+    }
+
+    detectLocation() {
+      // Check if this leaf is in the right or left sidebar
+      const leaf = this.leaf;
+      const leftSplit = this.app.workspace.leftSplit;
+      const rightSplit = this.app.workspace.rightSplit;
+      
+      this.isInSidebar = 
+        (leftSplit && leftSplit.getRoot() === leaf.getRoot()) ||
+        (rightSplit && rightSplit.getRoot() === leaf.getRoot());
     }
 
     render() {
       const container = this.contentEl;
       container.empty();
       container.addClass('kaizen-sidebar-container');
+      
+      // Add class for minimalistic sidebar styling
+      if (this.isInSidebar) {
+        container.addClass('kaizen-in-sidebar');
+      } else {
+        container.removeClass('kaizen-in-sidebar');
+      }
 
       // Header with create button
       const header = container.createDiv('kaizen-header');

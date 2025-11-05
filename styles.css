@@ -420,6 +420,153 @@
   cursor: not-allowed;
 }
 
+/* Minimalistic Sidebar Styles */
+.kaizen-in-sidebar .kaizen-header {
+  margin-bottom: 12px;
+}
+
+.kaizen-in-sidebar .kaizen-header h3 {
+  font-size: 1.2em;
+}
+
+.kaizen-in-sidebar .kaizen-create-btn {
+  padding: 4px 10px;
+  font-size: 0.85em;
+}
+
+.kaizen-in-sidebar .kaizen-summary {
+  padding: 6px 10px;
+  font-size: 0.85em;
+}
+
+.kaizen-in-sidebar .kaizen-cards-container {
+  gap: 10px;
+}
+
+/* Minimalistic Card */
+.kaizen-in-sidebar .kaizen-card {
+  padding: 10px;
+  border-width: 1px;
+  border-radius: 8px;
+}
+
+.kaizen-in-sidebar .kaizen-card:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.kaizen-in-sidebar .kaizen-card-header {
+  margin-bottom: 8px;
+}
+
+.kaizen-in-sidebar .kaizen-title-row {
+  margin-bottom: 6px;
+}
+
+.kaizen-in-sidebar .kaizen-card-title {
+  font-size: 0.95em;
+  font-weight: 600;
+}
+
+.kaizen-in-sidebar .kaizen-open-btn-top {
+  padding: 4px 8px;
+  font-size: 0.9em;
+}
+
+/* Hide metadata in sidebar for more space */
+.kaizen-in-sidebar .kaizen-card-metadata {
+  display: none;
+}
+
+/* Compact Stats Grid */
+.kaizen-in-sidebar .kaizen-card-stats {
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.kaizen-in-sidebar .kaizen-stat-item {
+  padding: 6px 4px;
+  background-color: transparent;
+  border: none;
+}
+
+.kaizen-in-sidebar .kaizen-stat-value {
+  font-size: 1.1em;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.kaizen-in-sidebar .kaizen-stat-label {
+  font-size: 0.65em;
+  letter-spacing: 0.3px;
+}
+
+/* Compact Check Button */
+.kaizen-in-sidebar .kaizen-check-btn-large {
+  padding: 8px 12px;
+  font-size: 0.9em;
+  border-width: 1px;
+}
+
+.kaizen-in-sidebar .kaizen-check-icon {
+  font-size: 1.1em;
+}
+
+.kaizen-in-sidebar .kaizen-check-btn-large:hover {
+  transform: none;
+}
+
+/* Compact Empty State */
+.kaizen-in-sidebar .kaizen-empty-state {
+  padding: 40px 16px;
+}
+
+.kaizen-in-sidebar .kaizen-empty-icon {
+  font-size: 3em;
+  margin-bottom: 12px;
+}
+
+.kaizen-in-sidebar .kaizen-empty-title {
+  font-size: 1em;
+}
+
+.kaizen-in-sidebar .kaizen-empty-subtitle {
+  font-size: 0.85em;
+}
+
+/* Compact Create Form */
+.kaizen-in-sidebar .kaizen-form-card {
+  padding: 12px;
+}
+
+.kaizen-in-sidebar .kaizen-form-card h4 {
+  font-size: 1em;
+  margin-bottom: 12px;
+}
+
+.kaizen-in-sidebar .kaizen-form-label {
+  font-size: 0.75em;
+  margin-top: 8px;
+  margin-bottom: 4px;
+}
+
+.kaizen-in-sidebar .kaizen-form-input,
+.kaizen-in-sidebar .kaizen-form-select {
+  padding: 8px;
+  font-size: 0.9em;
+  margin-bottom: 6px;
+}
+
+.kaizen-in-sidebar .kaizen-form-select {
+  height: 36px;
+}
+
+.kaizen-in-sidebar .kaizen-form-btn {
+  padding: 8px;
+  font-size: 0.85em;
+}
+
 /* Responsive */
 @media (max-width: 640px) {
   .kaizen-sidebar-container {
