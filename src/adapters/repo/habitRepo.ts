@@ -117,11 +117,22 @@ export const createHabitRepo = (app: App) => {
 
   /**
    * Create a new habit file.
+   * Auto-creates parent folder if it doesn't exist.
    */
   async function createHabitFile(
     filename: string,
     habit: Habit
   ): Promise<void> {
+    // Ensure parent folder exists
+    const parts = filename.split('/');
+    if (parts.length > 1) {
+      const folderPath = parts.slice(0, -1).join('/');
+      const folder = app.vault.getAbstractFileByPath(folderPath);
+      if (!folder) {
+        await app.vault.createFolder(folderPath);
+      }
+    }
+
     const fm = {
       title: habit.title,
       habit: true,

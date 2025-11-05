@@ -1,8 +1,436 @@
-/*
+/* Kaizen Plugin Styles - Card-Based Design */
 
-This CSS file will be included with your plugin, and
-available in the app when your plugin is enabled.
+/* Sidebar Container */
+.kaizen-sidebar-container {
+  padding: 16px;
+  height: 100%;
+  overflow-y: auto;
+}
 
-If your plugin does not need CSS, delete this file.
+/* Header */
+.kaizen-header {
+  margin-bottom: 20px;
+}
 
-*/
+.kaizen-header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.kaizen-header h3 {
+  margin: 0;
+  font-size: 1.4em;
+  font-weight: 700;
+  color: var(--text-normal);
+}
+
+.kaizen-create-btn {
+  padding: 6px 14px;
+  background-color: var(--interactive-accent);
+  color: var(--text-on-accent);
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.kaizen-create-btn:hover {
+  background-color: var(--interactive-accent-hover);
+  transform: translateY(-1px);
+}
+
+.kaizen-summary {
+  padding: 8px 12px;
+  background-color: var(--background-secondary);
+  border-radius: 6px;
+  border: 1px solid var(--divider-color);
+}
+
+.kaizen-summary-text {
+  font-size: 0.9em;
+  color: var(--text-muted);
+}
+
+/* Empty State */
+.kaizen-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.kaizen-empty-icon {
+  font-size: 4em;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.kaizen-empty-title {
+  font-size: 1.1em;
+  font-weight: 600;
+  color: var(--text-normal);
+  margin: 0 0 8px 0;
+}
+
+.kaizen-empty-subtitle {
+  font-size: 0.9em;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* Cards Container */
+.kaizen-cards-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Habit Card */
+.kaizen-card {
+  background-color: var(--background-secondary);
+  border: 2px solid var(--divider-color);
+  border-radius: 12px;
+  padding: 16px;
+  transition: all 0.3s ease;
+}
+
+.kaizen-card:hover {
+  border-color: var(--interactive-accent);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.kaizen-card.done-today {
+  border-color: var(--color-green);
+  background-color: var(--background-secondary-alt);
+}
+
+/* Card Header */
+.kaizen-card-header {
+  margin-bottom: 12px;
+}
+
+.kaizen-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.kaizen-card-title {
+  margin: 0;
+  font-size: 1.1em;
+  font-weight: 600;
+  color: var(--text-normal);
+  flex: 1;
+}
+
+.kaizen-open-btn-top {
+  padding: 6px 10px;
+  background-color: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--divider-color);
+  border-radius: 6px;
+  font-size: 1em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.kaizen-open-btn-top:hover {
+  background-color: var(--interactive-hover);
+  color: var(--text-normal);
+  border-color: var(--interactive-accent);
+}
+
+.kaizen-card-metadata {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.kaizen-metadata-label {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  background-color: var(--background-primary);
+  border: 1px solid var(--divider-color);
+  border-radius: 6px;
+  font-size: 0.85em;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.kaizen-metadata-label:hover {
+  background-color: var(--interactive-hover);
+  border-color: var(--interactive-accent);
+  color: var(--text-normal);
+}
+
+.kaizen-metadata-label.empty {
+  border-style: dashed;
+  opacity: 0.7;
+}
+
+.kaizen-metadata-label.empty:hover {
+  opacity: 1;
+}
+
+.kaizen-meta-icon {
+  margin-right: 4px;
+}
+
+.kaizen-meta-text {
+  font-weight: 500;
+}
+
+/* Stats Grid */
+.kaizen-card-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.kaizen-stat-item {
+  text-align: center;
+  padding: 10px;
+  background-color: var(--background-primary);
+  border-radius: 8px;
+  border: 1px solid var(--divider-color);
+}
+
+.kaizen-stat-value {
+  font-size: 1.5em;
+  font-weight: 700;
+  color: var(--text-normal);
+  margin-bottom: 4px;
+}
+
+.kaizen-stat-label {
+  font-size: 0.75em;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.kaizen-stat-streak .kaizen-stat-value {
+  color: var(--color-orange);
+}
+
+.kaizen-stat-best .kaizen-stat-value {
+  color: var(--color-purple);
+}
+
+/* Card Actions */
+.kaizen-card-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Large Check Button */
+.kaizen-check-btn-large {
+  width: 100%;
+  padding: 14px;
+  background-color: var(--interactive-normal);
+  color: var(--text-normal);
+  border: 2px solid var(--divider-color);
+  border-radius: 8px;
+  font-size: 1em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.kaizen-check-btn-large:hover {
+  background-color: var(--interactive-hover);
+  border-color: var(--interactive-accent);
+  transform: scale(1.02);
+}
+
+.kaizen-check-btn-large.done {
+  background-color: var(--color-green);
+  color: white;
+  border-color: var(--color-green);
+}
+
+.kaizen-check-btn-large.done:hover {
+  opacity: 0.9;
+  transform: scale(1);
+}
+
+.kaizen-check-icon {
+  font-size: 1.3em;
+  line-height: 1;
+}
+
+.kaizen-check-label {
+  line-height: 1;
+}
+
+/* Secondary Actions */
+.kaizen-secondary-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.kaizen-icon-btn {
+  padding: 8px 16px;
+  background-color: var(--background-primary);
+  color: var(--text-muted);
+  border: 1px solid var(--divider-color);
+  border-radius: 6px;
+  font-size: 1.1em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.kaizen-icon-btn:hover {
+  background-color: var(--interactive-hover);
+  color: var(--text-normal);
+  border-color: var(--interactive-accent);
+}
+
+/* Create Form */
+.kaizen-create-form {
+  margin-bottom: 20px;
+  animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.kaizen-form-card {
+  background-color: var(--background-secondary);
+  border: 2px solid var(--interactive-accent);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.kaizen-form-card h4 {
+  margin: 0 0 20px 0;
+  font-size: 1.1em;
+  font-weight: 600;
+  color: var(--text-normal);
+}
+
+.kaizen-form-label {
+  display: block;
+  font-size: 0.85em;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+  margin-top: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.kaizen-form-label:first-of-type {
+  margin-top: 0;
+}
+
+.kaizen-form-input,
+.kaizen-form-select {
+  width: 100%;
+  padding: 12px;
+  font-size: 0.95em;
+  line-height: 1.5;
+  border: 2px solid var(--divider-color);
+  border-radius: 8px;
+  background-color: var(--background-primary);
+  color: var(--text-normal);
+  margin-bottom: 8px;
+  box-sizing: border-box;
+}
+
+.kaizen-form-select {
+  height: 44px;
+  padding: 10px 12px;
+}
+
+.kaizen-form-input:focus,
+.kaizen-form-select:focus {
+  outline: none;
+  border-color: var(--interactive-accent);
+}
+
+.kaizen-form-select {
+  cursor: pointer;
+}
+
+.kaizen-form-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.kaizen-form-btn {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.kaizen-form-cancel {
+  background-color: var(--background-modifier-error);
+  color: var(--text-on-accent);
+}
+
+.kaizen-form-cancel:hover {
+  opacity: 0.9;
+}
+
+.kaizen-form-create {
+  background-color: var(--interactive-accent);
+  color: var(--text-on-accent);
+}
+
+.kaizen-form-create:hover {
+  background-color: var(--interactive-accent-hover);
+}
+
+.kaizen-form-create:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .kaizen-sidebar-container {
+    padding: 12px;
+  }
+  
+  .kaizen-card-stats {
+    gap: 8px;
+  }
+  
+  .kaizen-stat-value {
+    font-size: 1.3em;
+  }
+}

@@ -1,16 +1,19 @@
 /**
- * Compact sidebar view for Kaizen habits.
- * Shows habit list with quick-access increment buttons.
+ * Sidebar view for Kaizen habits.
+ * Card-based layout with reactive updates and inline creation.
  */
 
-import { ItemView, WorkspaceLeaf } from 'obsidian';
-import { Habit, currentStreak, isDoneToday, deriveCount } from '../domain/habit';
+import { ItemView, WorkspaceLeaf, Notice, MarkdownView } from 'obsidian';
+import { Habit, currentStreak, isDoneToday, deriveCount, longestStreak } from '../domain/habit';
 import { HabitService } from '../services/habitService';
 
 export const VIEW_TYPE_SIDEBAR = 'kaizen-sidebar';
 
 export const createSidebarView = (habitService: HabitService) => {
   class SidebarView extends ItemView {
+    private habits: Habit[] = [];
+    private fileWatcherRef: any = null;
+
     constructor(leaf: WorkspaceLeaf) {
       super(leaf);
     }
@@ -28,97 +31,458 @@ export const createSidebarView = (habitService: HabitService) => {
     }
 
     async onOpen() {
-      await this.render();
+      await this.loadAndRender();
+      this.registerFileWatcher();
     }
 
-    async render() {
+    async onClose() {
+      this.unregisterFileWatcher();
+    }
+
+    async loadAndRender() {
+      this.habits = await habitService.listHabits();
+      this.render();
+    }
+
+    render() {
       const container = this.contentEl;
       container.empty();
+      container.addClass('kaizen-sidebar-container');
 
-      // Header
+      // Header with create button
       const header = container.createDiv('kaizen-header');
-      header.createEl('h3', { text: 'Kaizen Habits' });
+      const headerTop = header.createDiv('kaizen-header-top');
+      headerTop.createEl('h3', { text: 'Habits' });
+      
+      const createBtn = headerTop.createEl('button', {
+        text: '+ New',
+        cls: 'kaizen-create-btn',
+      });
+      createBtn.onclick = () => this.showCreateForm();
 
-      const habits = await habitService.listHabits();
+      // Stats summary
+      if (this.habits.length > 0) {
+        const summary = header.createDiv('kaizen-summary');
+        const doneToday = this.habits.filter(h => isDoneToday(h)).length;
+        summary.createEl('span', {
+          text: `${doneToday}/${this.habits.length} done today`,
+          cls: 'kaizen-summary-text',
+        });
+      }
 
-      if (habits.length === 0) {
-        container.createEl('p', {
-          text: 'No habits yet. Create one with habit: true in frontmatter.',
-          cls: 'kaizen-empty',
+      // Empty state
+      if (this.habits.length === 0) {
+        const empty = container.createDiv('kaizen-empty-state');
+        empty.createEl('div', {
+          text: '🌱',
+          cls: 'kaizen-empty-icon',
+        });
+        empty.createEl('p', {
+          text: 'No habits yet',
+          cls: 'kaizen-empty-title',
+        });
+        empty.createEl('p', {
+          text: 'Click "+ New" to create your first habit',
+          cls: 'kaizen-empty-subtitle',
         });
         return;
       }
 
-      // Habit list
-      const listContainer = container.createDiv('kaizen-list');
+      // Habit cards
+      const listContainer = container.createDiv('kaizen-cards-container');
 
-      for (const habit of habits) {
-        this.renderHabitRow(listContainer, habit);
+      for (const habit of this.habits) {
+        this.renderHabitCard(listContainer, habit);
       }
     }
 
-    renderHabitRow(container: HTMLElement, habit: Habit) {
-      const row = container.createDiv('kaizen-row');
-
-      // Habit info section
-      const info = row.createDiv('kaizen-info');
-      const title = info.createEl('div', {
-        text: habit.title,
-        cls: 'kaizen-title',
-      });
-
-      // Count and streak
-      const stats = info.createDiv('kaizen-stats');
-      const count = deriveCount(habit);
-      const streak = currentStreak(habit);
-      stats.createEl('span', {
-        text: `${count} done`,
-        cls: 'kaizen-count',
-      });
-      stats.createEl('span', {
-        text: `🔥 ${streak}`,
-        cls: 'kaizen-streak',
-      });
-
-      // Action buttons
-      const actions = row.createDiv('kaizen-actions');
-
+    renderHabitCard(container: HTMLElement, habit: Habit) {
+      const card = container.createDiv('kaizen-card');
       const doneToday = isDoneToday(habit);
-      const checkBtn = actions.createEl('button', {
-        text: doneToday ? '✅' : '◯',
-        cls: 'kaizen-btn kaizen-check-btn',
+      
+      if (doneToday) {
+        card.addClass('done-today');
+      }
+
+      // Card header with open button
+      const cardHeader = card.createDiv('kaizen-card-header');
+      const titleRow = cardHeader.createDiv('kaizen-title-row');
+      
+      titleRow.createEl('h4', {
+        text: habit.title,
+        cls: 'kaizen-card-title',
       });
-      checkBtn.classList.toggle('done', doneToday);
 
-      checkBtn.onclick = async (e) => {
-        e.stopPropagation();
-        try {
-          await habitService.increment(habit);
-          await this.render();
-        } catch (err) {
-          console.error('Failed to increment habit:', err);
-        }
-      };
-
-      // Open note link
-      const openBtn = actions.createEl('button', {
+      const openBtn = titleRow.createEl('button', {
         text: '📝',
-        cls: 'kaizen-btn kaizen-open-btn',
+        cls: 'kaizen-open-btn-top',
+        attr: { 'aria-label': 'Open note' },
       });
-      openBtn.title = 'Open habit note';
 
       openBtn.onclick = async (e) => {
         e.stopPropagation();
+        await this.openHabitNote(habit.id);
+      };
+
+      // Trigger and Schedule metadata (always shown)
+      const metadata = cardHeader.createDiv('kaizen-card-metadata');
+      
+      // Trigger button
+      const triggerLabel = metadata.createEl('button', {
+        cls: habit.trigger ? 'kaizen-metadata-label' : 'kaizen-metadata-label empty',
+      });
+      triggerLabel.createEl('span', { text: '🎯 ', cls: 'kaizen-meta-icon' });
+      triggerLabel.createEl('span', {
+        text: habit.trigger || 'Add trigger',
+        cls: 'kaizen-meta-text',
+      });
+      
+      triggerLabel.onclick = async (e) => {
+        e.stopPropagation();
+        await this.openHabitNote(habit.id, 'trigger');
+      };
+
+      // Schedule button
+      const scheduleLabel = metadata.createEl('button', {
+        cls: habit.schedule ? 'kaizen-metadata-label' : 'kaizen-metadata-label empty',
+      });
+      scheduleLabel.createEl('span', { text: '📅 ', cls: 'kaizen-meta-icon' });
+      scheduleLabel.createEl('span', {
+        text: habit.schedule || 'Add schedule',
+        cls: 'kaizen-meta-text',
+      });
+      
+      scheduleLabel.onclick = async (e) => {
+        e.stopPropagation();
+        await this.openHabitNote(habit.id, 'schedule');
+      };
+
+      // Stats grid
+      const statsGrid = card.createDiv('kaizen-card-stats');
+      
+      const count = deriveCount(habit);
+      const streak = currentStreak(habit);
+      const best = longestStreak(habit);
+
+      this.createStatItem(statsGrid, 'Total', count.toString(), 'kaizen-stat-total');
+      this.createStatItem(statsGrid, 'Streak', streak.toString(), 'kaizen-stat-streak');
+      this.createStatItem(statsGrid, 'Best', best.toString(), 'kaizen-stat-best');
+
+      // Actions
+      const actions = card.createDiv('kaizen-card-actions');
+
+      // Check button (primary action)
+      const checkBtn = actions.createEl('button', {
+        cls: 'kaizen-check-btn-large',
+      });
+      
+      const checkIcon = checkBtn.createEl('span', { cls: 'kaizen-check-icon' });
+      checkIcon.textContent = doneToday ? '✓' : '○';
+      
+      const checkLabel = checkBtn.createEl('span', { cls: 'kaizen-check-label' });
+      checkLabel.textContent = doneToday ? 'Done today' : 'Mark done';
+
+      if (doneToday) {
+        checkBtn.addClass('done');
+      }
+
+      checkBtn.onclick = async (e) => {
+        e.stopPropagation();
+        if (doneToday) {
+          new Notice('Already marked done today');
+          return;
+        }
+        
+        // Optimistic update
+        checkBtn.addClass('done');
+        checkBtn.disabled = true;
+        checkIcon.textContent = '✓';
+        checkLabel.textContent = 'Done today';
+        card.addClass('done-today');
+        
+        // Update stats optimistically
+        const newCount = count + 1;
+        const newStreak = streak + 1;
+        const statsValues = statsGrid.querySelectorAll('.kaizen-stat-value');
+        if (statsValues[0]) statsValues[0].textContent = newCount.toString();
+        if (statsValues[1]) statsValues[1].textContent = newStreak.toString();
+        
         try {
-          const file = this.app.vault.getAbstractFileByPath(habit.id);
-          if (file) {
-            const leaf = this.app.workspace.getLeaf('tab');
-            await leaf.openFile(file as any);
+          const updated = await habitService.increment(habit);
+          // Update habit in memory
+          const idx = this.habits.findIndex(h => h.id === habit.id);
+          if (idx !== -1) {
+            this.habits[idx] = updated;
           }
+          // Update summary count
+          this.updateSummary();
         } catch (err) {
-          console.error('Failed to open habit note:', err);
+          console.error('Failed to increment habit:', err);
+          new Notice('Failed to mark habit done');
+          // Revert optimistic update
+          checkBtn.removeClass('done');
+          checkBtn.disabled = false;
+          checkIcon.textContent = '○';
+          checkLabel.textContent = 'Mark done';
+          card.removeClass('done-today');
+          // Revert stats
+          if (statsValues[0]) statsValues[0].textContent = count.toString();
+          if (statsValues[1]) statsValues[1].textContent = streak.toString();
         }
       };
+
+    }
+
+    async openHabitNote(habitId: string, focusField?: 'trigger' | 'schedule') {
+      try {
+        const file = this.app.vault.getAbstractFileByPath(habitId);
+        if (file) {
+          const leaf = this.app.workspace.getLeaf('tab');
+          await leaf.openFile(file as any);
+          
+          // If focus field specified, try to focus it
+          if (focusField) {
+            // Wait a bit for the editor to load
+            setTimeout(() => {
+              const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+              if (view && view.editor) {
+                const content = view.editor.getValue();
+                const regex = new RegExp(`^${focusField}:\\s*(.*)$`, 'im');
+                const match = content.match(regex);
+                
+                if (match) {
+                  const line = content.substring(0, match.index).split('\n').length - 1;
+                  view.editor.setCursor({ line, ch: match[0].length });
+                  view.editor.focus();
+                }
+              }
+            }, 100);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to open habit note:', err);
+      }
+    }
+
+    createStatItem(container: HTMLElement, label: string, value: string, cls?: string) {
+      const item = container.createDiv('kaizen-stat-item');
+      if (cls) item.addClass(cls);
+      
+      item.createEl('div', {
+        text: value,
+        cls: 'kaizen-stat-value',
+      });
+      item.createEl('div', {
+        text: label,
+        cls: 'kaizen-stat-label',
+      });
+    }
+
+    updateSummary() {
+      const summaryEl = this.contentEl.querySelector('.kaizen-summary-text');
+      if (summaryEl && this.habits.length > 0) {
+        const doneToday = this.habits.filter(h => isDoneToday(h)).length;
+        summaryEl.textContent = `${doneToday}/${this.habits.length} done today`;
+      }
+    }
+
+    registerFileWatcher() {
+      // Listen for file modifications
+      this.fileWatcherRef = this.app.vault.on('modify', async (file) => {
+        // Check if modified file is a habit
+        const habitIds = this.habits.map(h => h.id);
+        if (habitIds.includes(file.path)) {
+          console.log('[Kaizen] Habit file modified:', file.path);
+          // Reload just this habit's data
+          const updatedHabit = await habitService.getHabit(file.path);
+          if (updatedHabit) {
+            const idx = this.habits.findIndex(h => h.id === file.path);
+            if (idx !== -1) {
+              this.habits[idx] = updatedHabit;
+              // Re-render to show updated trigger/schedule
+              this.render();
+            }
+          }
+        }
+      });
+
+      // Also listen for metadata changes (frontmatter)
+      this.app.metadataCache.on('changed', async (file) => {
+        const habitIds = this.habits.map(h => h.id);
+        if (habitIds.includes(file.path)) {
+          console.log('[Kaizen] Habit metadata changed:', file.path);
+          const updatedHabit = await habitService.getHabit(file.path);
+          if (updatedHabit) {
+            const idx = this.habits.findIndex(h => h.id === file.path);
+            if (idx !== -1) {
+              this.habits[idx] = updatedHabit;
+              this.render();
+            }
+          }
+        }
+      });
+    }
+
+    unregisterFileWatcher() {
+      if (this.fileWatcherRef) {
+        this.app.vault.offref(this.fileWatcherRef);
+        this.fileWatcherRef = null;
+      }
+    }
+
+    showCreateForm() {
+      const container = this.contentEl;
+      const existingForm = container.querySelector('.kaizen-create-form');
+      if (existingForm) {
+        existingForm.remove();
+        return;
+      }
+
+      const form = container.createDiv('kaizen-create-form');
+      
+      const formCard = form.createDiv('kaizen-form-card');
+      formCard.createEl('h4', { text: 'Create New Habit' });
+      
+      // Habit name
+      const nameLabel = formCard.createEl('label', {
+        text: 'Habit Name',
+        cls: 'kaizen-form-label',
+      });
+      const nameInput = formCard.createEl('input', {
+        type: 'text',
+        placeholder: 'e.g., Morning Exercise',
+        cls: 'kaizen-form-input',
+      });
+      
+      // Trigger field
+      const triggerLabel = formCard.createEl('label', {
+        text: 'Trigger (optional)',
+        cls: 'kaizen-form-label',
+      });
+      const triggerInput = formCard.createEl('input', {
+        type: 'text',
+        placeholder: 'e.g., After morning coffee',
+        cls: 'kaizen-form-input',
+      });
+      
+      // Schedule dropdown
+      const scheduleLabel = formCard.createEl('label', {
+        text: 'Schedule (optional)',
+        cls: 'kaizen-form-label',
+      });
+      const scheduleSelect = formCard.createEl('select', {
+        cls: 'kaizen-form-select',
+      });
+      
+      const scheduleOptions = [
+        { value: '', label: 'Select schedule...' },
+        { value: 'daily', label: 'Daily' },
+        { value: 'every other day', label: 'Every other day' },
+        { value: 'weekdays', label: 'Weekdays (Mon-Fri)' },
+        { value: 'weekends', label: 'Weekends (Sat-Sun)' },
+        { value: 'weekly', label: 'Weekly' },
+        { value: '3x per week', label: '3x per week' },
+        { value: 'monthly', label: 'Monthly' },
+      ];
+      
+      scheduleOptions.forEach(opt => {
+        const option = scheduleSelect.createEl('option', {
+          value: opt.value,
+          text: opt.label,
+        });
+      });
+      
+      const buttons = formCard.createDiv('kaizen-form-buttons');
+      
+      const cancelBtn = buttons.createEl('button', {
+        text: 'Cancel',
+        cls: 'kaizen-form-btn kaizen-form-cancel',
+      });
+      
+      const createBtn = buttons.createEl('button', {
+        text: 'Create',
+        cls: 'kaizen-form-btn kaizen-form-create',
+      });
+
+      const cleanup = () => form.remove();
+
+      cancelBtn.onclick = cleanup;
+
+      const doCreate = async () => {
+        const habitName = nameInput.value.trim();
+        if (!habitName) {
+          new Notice('Please enter a habit name');
+          nameInput.focus();
+          return;
+        }
+
+        try {
+          createBtn.disabled = true;
+          createBtn.textContent = 'Creating...';
+          
+          const filename = `Habits/${habitName}.md`;
+          const trigger = triggerInput.value.trim() || undefined;
+          const schedule = scheduleSelect.value || undefined;
+          
+          console.log('[Kaizen] Creating habit:', habitName);
+          await habitService.createHabit(filename, habitName, trigger, schedule);
+          console.log('[Kaizen] Habit created, reloading...');
+          
+          new Notice(`✅ Habit "${habitName}" created!`);
+          cleanup();
+          
+          // Wait for Obsidian metadata cache to update
+          console.log('[Kaizen] Waiting for metadata cache...');
+          await new Promise(resolve => setTimeout(resolve, 150));
+          
+          console.log('[Kaizen] Calling loadAndRender...');
+          await this.loadAndRender();
+          console.log('[Kaizen] LoadAndRender complete. Habit count:', this.habits.length);
+        } catch (err) {
+          console.error('[Kaizen] Failed to create habit:', err);
+          new Notice('Failed to create habit');
+          createBtn.disabled = false;
+          createBtn.textContent = 'Create';
+        }
+      };
+
+      createBtn.onclick = doCreate;
+      nameInput.onkeydown = (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          triggerInput.focus();
+        } else if (e.key === 'Escape') {
+          cleanup();
+        }
+      };
+      
+      triggerInput.onkeydown = (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          scheduleSelect.focus();
+        } else if (e.key === 'Escape') {
+          cleanup();
+        }
+      };
+      
+      scheduleSelect.onkeydown = (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          doCreate();
+        } else if (e.key === 'Escape') {
+          cleanup();
+        }
+      };
+
+      // Insert at top
+      const header = container.querySelector('.kaizen-header');
+      if (header && header.nextSibling) {
+        container.insertBefore(form, header.nextSibling);
+      } else {
+        container.appendChild(form);
+      }
+
+      nameInput.focus();
     }
   }
 

@@ -1,134 +1,203 @@
-import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
+/**
+ * Kaizen Plugin - Main entry point
+ * Habit tracker focusing on building habits over actions.
+ */
 
-// Remember to rename these classes and interfaces!
+import { Plugin, Notice } from 'obsidian';
+import { createHabitRepo } from './src/adapters/repo/habitRepo';
+import { createHabitService } from './src/services/habitService';
+import { createSidebarView, VIEW_TYPE_SIDEBAR } from './src/ui/sidebarView';
+import { createFullPageView, VIEW_TYPE_FULL } from './src/ui/fullPageView';
+import { KaizenSettingsTab } from './src/settings/settingsTab';
+import {
+  KaizenSettings,
+  DEFAULT_SETTINGS,
+} from './src/settings/settings';
 
-interface MyPluginSettings {
-	mySetting: string;
-}
+export default class KaizenPlugin extends Plugin {
+  settings: KaizenSettings;
 
-const DEFAULT_SETTINGS: MyPluginSettings = {
-	mySetting: 'default'
-}
+  async onload() {
+    await this.loadSettings();
 
-export default class MyPlugin extends Plugin {
-	settings: MyPluginSettings;
+    if (this.settings.devLoggingEnabled) {
+      console.log('Kaizen plugin loaded with settings:', this.settings);
+    }
 
-	async onload() {
-		await this.loadSettings();
+    // Create repository and service
+    const repo = createHabitRepo(this.app);
+    const service = createHabitService(repo, {
+      autoLogDaily: this.settings.autoLogToDailyNote,
+      logToDailyNote: this.settings.autoLogToDailyNote,
+      app: this.app,
+    });
 
-		// This creates an icon in the left ribbon.
-		const ribbonIconEl = this.addRibbonIcon('dice', 'Sample Plugin', (_evt: MouseEvent) => {
-			// Called when the user clicks the icon.
-			new Notice('This is a notice!');
-		});
-		// Perform additional things with the ribbon
-		ribbonIconEl.addClass('my-plugin-ribbon-class');
+    // Ribbon icon
+    this.addRibbonIcon('check-circle', 'Kaizen Habits', (evt: MouseEvent) => {
+      this.app.workspace.getLeaf('split', 'vertical').setViewState({
+        type: VIEW_TYPE_SIDEBAR,
+      });
+    });
 
-		// This adds a status bar item to the bottom of the app. Does not work on mobile apps.
-		const statusBarItemEl = this.addStatusBarItem();
-		statusBarItemEl.setText('Status Bar Text');
+    // Register views
+    const SidebarView = createSidebarView(service);
+    const FullPageView = createFullPageView(service);
+    
+    this.registerView(
+      VIEW_TYPE_SIDEBAR,
+      (leaf) => new SidebarView(leaf)
+    );
+    this.registerView(
+      VIEW_TYPE_FULL,
+      (leaf) => new FullPageView(leaf)
+    );
 
-		// This adds a simple command that can be triggered anywhere
-		this.addCommand({
-			id: 'open-sample-modal-simple',
-			name: 'Open sample modal (simple)',
-			callback: () => {
-				new SampleModal(this.app).open();
-			}
-		});
-		// This adds an editor command that can perform some operation on the current editor instance
-		this.addCommand({
-			id: 'sample-editor-command',
-			name: 'Sample editor command',
-			editorCallback: (editor: Editor, _view: MarkdownView) => {
-				console.log(editor.getSelection());
-				editor.replaceSelection('Sample Editor Command');
-			}
-		});
-		// This adds a complex command that can check whether the current state of the app allows execution of the command
-		this.addCommand({
-			id: 'open-sample-modal-complex',
-			name: 'Open sample modal (complex)',
-			checkCallback: (checking: boolean) => {
-				// Conditions to check
-				const markdownView = this.app.workspace.getActiveViewOfType(MarkdownView);
-				if (markdownView) {
-					// If checking is true, we're simply "checking" if the command can be run.
-					// If checking is false, then we want to actually perform the operation.
-					if (!checking) {
-						new SampleModal(this.app).open();
-					}
+    // Commands
+    this.addCommand({
+      id: 'kaizen-open-sidebar',
+      name: 'Open Kaizen Sidebar',
+      callback: () => {
+        this.app.workspace.getLeaf('split', 'vertical').setViewState({
+          type: VIEW_TYPE_SIDEBAR,
+        });
+      },
+    });
 
-					// This command will only show up in Command Palette when the check function returns true
-					return true;
-				}
-			}
-		});
+    this.addCommand({
+      id: 'kaizen-open-full',
+      name: 'Open Kaizen Analytics',
+      callback: () => {
+        this.app.workspace.getLeaf('split', 'vertical').setViewState({
+          type: VIEW_TYPE_FULL,
+        });
+      },
+    });
 
-		// This adds a settings tab so the user can configure various aspects of the plugin
-		this.addSettingTab(new SampleSettingTab(this.app, this));
+    this.addCommand({
+      id: 'kaizen-create-habit',
+      name: 'Create New Habit',
+      callback: async () => {
+        const habitName = await this.promptForHabitName();
+        if (habitName) {
+          try {
+            const filename = `Habits/${habitName}.md`;
+            await service.createHabit(filename, habitName);
+            new Notice(`✅ Habit "${habitName}" created!`);
+          } catch (err) {
+            new Notice(`❌ Failed to create habit: ${err}`);
+          }
+        }
+      },
+    });
 
-		// If the plugin hooks up any global DOM events (on parts of the app that doesn't belong to this plugin)
-		// Using this function will automatically remove the event listener when this plugin is disabled.
-		this.registerDomEvent(document, 'click', (evt: MouseEvent) => {
-			console.log('click', evt);
-		});
+    // Settings tab
+    this.addSettingTab(new KaizenSettingsTab(this.app, this));
+  }
 
-		// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
-		this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
-	}
+  onunload() {
+    if (this.settings.devLoggingEnabled) {
+      console.log('Kaizen plugin unloaded');
+    }
+  }
 
-	onunload() {
+  private promptForHabitName(): Promise<string | null> {
+    return new Promise((resolve) => {
+      const input = document.createElement('input');
+      input.placeholder = 'Enter habit name...';
+      input.style.padding = '8px';
+      input.style.marginBottom = '8px';
+      input.style.width = '100%';
+      input.style.boxSizing = 'border-box';
 
-	}
+      const modal = document.createElement('div');
+      modal.style.position = 'fixed';
+      modal.style.top = '50%';
+      modal.style.left = '50%';
+      modal.style.transform = 'translate(-50%, -50%)';
+      modal.style.backgroundColor = 'white';
+      modal.style.padding = '20px';
+      modal.style.borderRadius = '8px';
+      modal.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.1)';
+      modal.style.zIndex = '10000';
+      modal.style.maxWidth = '400px';
+      modal.style.width = '90%';
 
-	async loadSettings() {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
-	}
+      const overlay = document.createElement('div');
+      overlay.style.position = 'fixed';
+      overlay.style.top = '0';
+      overlay.style.left = '0';
+      overlay.style.width = '100%';
+      overlay.style.height = '100%';
+      overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+      overlay.style.zIndex = '9999';
 
-	async saveSettings() {
-		await this.saveData(this.settings);
-	}
-}
+      const label = document.createElement('label');
+      label.textContent = 'Habit Name:';
+      label.style.display = 'block';
+      label.style.marginBottom = '8px';
 
-class SampleModal extends Modal {
-	constructor(app: App) {
-		super(app);
-	}
+      const btnContainer = document.createElement('div');
+      btnContainer.style.display = 'flex';
+      btnContainer.style.gap = '8px';
+      btnContainer.style.marginTop = '16px';
 
-	onOpen() {
-		const {contentEl} = this;
-		contentEl.setText('Woah!');
-	}
+      const okBtn = document.createElement('button');
+      okBtn.textContent = 'Create';
+      okBtn.style.padding = '8px 16px';
+      okBtn.style.cursor = 'pointer';
+      okBtn.style.flex = '1';
 
-	onClose() {
-		const {contentEl} = this;
-		contentEl.empty();
-	}
-}
+      const cancelBtn = document.createElement('button');
+      cancelBtn.textContent = 'Cancel';
+      cancelBtn.style.padding = '8px 16px';
+      cancelBtn.style.cursor = 'pointer';
+      cancelBtn.style.flex = '1';
 
-class SampleSettingTab extends PluginSettingTab {
-	plugin: MyPlugin;
+      const cleanup = () => {
+        document.body.removeChild(modal);
+        document.body.removeChild(overlay);
+      };
 
-	constructor(app: App, plugin: MyPlugin) {
-		super(app, plugin);
-		this.plugin = plugin;
-	}
+      okBtn.onclick = () => {
+        cleanup();
+        resolve(input.value || null);
+      };
 
-	display(): void {
-		const {containerEl} = this;
+      cancelBtn.onclick = () => {
+        cleanup();
+        resolve(null);
+      };
 
-		containerEl.empty();
+      input.onkeydown = (e) => {
+        if (e.key === 'Enter') {
+          okBtn.click();
+        } else if (e.key === 'Escape') {
+          cancelBtn.click();
+        }
+      };
 
-		new Setting(containerEl)
-			.setName('Setting #1')
-			.setDesc('It\'s a secret')
-			.addText(text => text
-				.setPlaceholder('Enter your secret')
-				.setValue(this.plugin.settings.mySetting)
-				.onChange(async (value) => {
-					this.plugin.settings.mySetting = value;
-					await this.plugin.saveSettings();
-				}));
-	}
+      modal.appendChild(label);
+      modal.appendChild(input);
+      btnContainer.appendChild(okBtn);
+      btnContainer.appendChild(cancelBtn);
+      modal.appendChild(btnContainer);
+
+      document.body.appendChild(overlay);
+      document.body.appendChild(modal);
+
+      input.focus();
+    });
+  }
+
+  async loadSettings() {
+    this.settings = Object.assign(
+      {},
+      DEFAULT_SETTINGS,
+      await this.loadData()
+    );
+  }
+
+  async saveSettings() {
+    await this.saveData(this.settings);
+  }
 }

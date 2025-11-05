@@ -3,8 +3,7 @@
  */
 
 import { App, PluginSettingTab, Setting } from 'obsidian';
-import KaizenPlugin from '../main';
-import { KaizenSettings } from './settings';
+import KaizenPlugin from '../../main';
 
 export class KaizenSettingsTab extends PluginSettingTab {
   plugin: KaizenPlugin;
