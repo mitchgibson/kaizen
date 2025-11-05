@@ -1,11 +1,10 @@
 {
-	"id": "sample-plugin",
-	"name": "Sample Plugin",
+	"id": "kaizen-plugin",
+	"name": "Kaizen",
 	"version": "1.0.0",
 	"minAppVersion": "0.15.0",
-	"description": "Demonstrates some of the capabilities of the Obsidian API.",
-	"author": "Obsidian",
-	"authorUrl": "https://obsidian.md",
-	"fundingUrl": "https://obsidian.md/pricing",
+	"description": "Kaizen is an Obsidian plugin designed to help you build habits by focusing on habit building over the action repeated by the habit.",
+	"author": "TheSmitchuation",
+	"authorUrl": "https://thesmitchuation.dev",
 	"isDesktopOnly": false
 }
