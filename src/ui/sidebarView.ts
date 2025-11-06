@@ -75,7 +75,7 @@ export const createSidebarView = (habitService: HabitService) => {
       headerTop.createEl('h3', { text: 'Habits' });
       
       const createBtn = headerTop.createEl('button', {
-        text: '+ New',
+        text: '+',
         cls: 'kaizen-create-btn',
       });
       createBtn.onclick = () => this.showCreateForm();
