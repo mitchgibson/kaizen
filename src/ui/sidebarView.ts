@@ -4,8 +4,9 @@
  */
 
 import { ItemView, WorkspaceLeaf, Notice, MarkdownView } from 'obsidian';
-import { Habit, currentStreak, isDoneToday, deriveCount, longestStreak } from '../domain/habit';
+import { Habit, currentStreak, isDoneToday, deriveCount, longestStreak, ISODate } from '../domain/habit';
 import { HabitService } from '../services/habitService';
+import { DayChangeDetector } from '../utils/dayChangeDetector';
 
 export const VIEW_TYPE_SIDEBAR = 'kaizen-sidebar';
 
@@ -14,6 +15,7 @@ export const createSidebarView = (habitService: HabitService) => {
     private habits: Habit[] = [];
     private fileWatcherRef: any = null;
     private isInSidebar: boolean = false;
+    private dayChangeDetector: DayChangeDetector = new DayChangeDetector();
 
     constructor(leaf: WorkspaceLeaf) {
       super(leaf);
@@ -34,10 +36,12 @@ export const createSidebarView = (habitService: HabitService) => {
     async onOpen() {
       await this.loadAndRender();
       this.registerFileWatcher();
+      this.registerDayChangeDetector();
     }
 
     async onClose() {
       this.unregisterFileWatcher();
+      this.unregisterDayChangeDetector();
     }
 
     async loadAndRender() {
@@ -352,6 +356,32 @@ export const createSidebarView = (habitService: HabitService) => {
       if (this.fileWatcherRef) {
         this.app.vault.offref(this.fileWatcherRef);
         this.fileWatcherRef = null;
+      }
+    }
+
+    registerDayChangeDetector() {
+      console.log("Registering Day Change Detector");
+      // Start day change detector and set up callback
+      this.dayChangeDetector.start((oldDate: ISODate, newDate: ISODate) => {
+        console.log(`[Kaizen] Day rolled over from ${oldDate} to ${newDate}, refreshing habits`);
+        // Refresh all habits when day changes
+        this.onDayChanged(oldDate, newDate);
+      });
+    }
+
+    unregisterDayChangeDetector() {
+      console.log("Unregistering Day Change Detector");
+      this.dayChangeDetector.stop();
+    }
+
+    async onDayChanged(oldDate: ISODate, newDate: ISODate) {
+      // Reload and render habits when day changes
+      await this.loadAndRender();
+      
+      // Show a subtle notification that habits have been reset
+      const doneCount = this.habits.filter(h => isDoneToday(h)).length;
+      if (doneCount > 0) {
+        new Notice(`🌅 New day! ${doneCount} habit${doneCount === 1 ? '' : 's'} already done today.`);
       }
     }
 

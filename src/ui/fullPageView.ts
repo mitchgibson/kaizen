@@ -11,13 +11,17 @@ import {
   isDoneToday,
   completionRate,
   deriveCount,
+  ISODate,
 } from '../domain/habit';
 import { HabitService } from '../services/habitService';
+import { DayChangeDetector } from '../utils/dayChangeDetector';
 
 export const VIEW_TYPE_FULL = 'kaizen-full';
 
 export const createFullPageView = (habitService: HabitService) => {
   class FullPageView extends ItemView {
+    private dayChangeDetector: DayChangeDetector = new DayChangeDetector();
+
     constructor(leaf: WorkspaceLeaf) {
       super(leaf);
     }
@@ -34,8 +38,13 @@ export const createFullPageView = (habitService: HabitService) => {
       return 'bar-chart-2';
     }
 
+    async onClose() {
+      this.unregisterDayChangeDetector();
+    }
+
     async onOpen() {
       await this.render();
+      this.registerDayChangeDetector();
     }
 
     async render() {
@@ -169,6 +178,19 @@ export const createFullPageView = (habitService: HabitService) => {
           console.error('Failed to open habit note:', err);
         }
       };
+    }
+
+    registerDayChangeDetector() {
+      // Start day change detector and set up callback
+      this.dayChangeDetector.start((oldDate: ISODate, newDate: ISODate) => {
+        console.log(`[Kaizen] Day rolled over in full view from ${oldDate} to ${newDate}, refreshing`);
+        // Refresh the full view when day changes
+        this.render();
+      });
+    }
+
+    unregisterDayChangeDetector() {
+      this.dayChangeDetector.stop();
     }
   }
 
