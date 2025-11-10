@@ -3,7 +3,7 @@
  * Card-based layout with reactive updates and inline creation.
  */
 
-import { ItemView, WorkspaceLeaf, Notice, MarkdownView } from 'obsidian';
+import { ItemView, WorkspaceLeaf, Notice, MarkdownView, setIcon } from 'obsidian';
 import { Habit, currentStreak, isDoneToday, deriveCount, longestStreak, ISODate } from '../domain/habit';
 import { HabitService } from '../services/habitService';
 import { DayChangeDetector } from '../utils/dayChangeDetector';
@@ -76,7 +76,10 @@ export const createSidebarView = (habitService: HabitService) => {
       // Header with create button
       const header = container.createDiv('kaizen-header');
       const headerTop = header.createDiv('kaizen-header-top');
-      headerTop.createEl('h3', { text: 'Habits' });
+      
+      // Add icon
+      const iconContainer = headerTop.createDiv('kaizen-header-icon');
+      setIcon(iconContainer, 'check-circle');
       
       const createBtn = headerTop.createEl('button', {
         text: '+',
