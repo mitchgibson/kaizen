@@ -19,7 +19,10 @@ export interface Habit {
  */
 export const todayISO = (): ISODate => {
   const d = new Date();
-  return d.toISOString().slice(0, 10);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 };
 
 /**
@@ -46,8 +49,9 @@ export const markDone = (habit: Habit, date: ISODate = todayISO()): Habit => {
 };
 
 /**
- * Calculate current streak: consecutive days up to today where habit was done.
- * Returns 0 if habit not done today or yesterday.
+ * Calculate current streak: consecutive days where habit was done, counting backwards.
+ * If today is completed, includes today. Otherwise counts from yesterday.
+ * Returns 0 if yesterday was not completed (or if today is not completed and yesterday doesn't exist).
  */
 export const currentStreak = (
   habit: Habit,
@@ -56,15 +60,23 @@ export const currentStreak = (
   const set = new Set(habit.history);
   let streak = 0;
 
-  // Helper: get date N days before the given date
+  // Helper: get date N days before the given date string (YYYY-MM-DD)
   const dayBefore = (d: string, n: number): ISODate => {
-    const dt = new Date(d);
+    const [y, m, day] = d.split('-').map(Number);
+    // Create date in local time
+    const dt = new Date(y, (m as number) - 1, day);
     dt.setDate(dt.getDate() - n);
-    return dt.toISOString().slice(0, 10);
+    const year = dt.getFullYear();
+    const month = String(dt.getMonth() + 1).padStart(2, '0');
+    const dayStr = String(dt.getDate()).padStart(2, '0');
+    return `${year}-${month}-${dayStr}`;
   };
 
-  // Count consecutive days backwards from now
-  for (let i = 0; ; i++) {
+  // Determine the starting day: if today is completed, start from today (i=0); else start from yesterday (i=1)
+  const startDay = set.has(now) ? 0 : 1;
+
+  // Count consecutive days backwards from the starting day
+  for (let i = startDay; ; i++) {
     const dayIso = dayBefore(now, i);
     if (set.has(dayIso)) {
       streak++;
@@ -72,7 +84,6 @@ export const currentStreak = (
       break;
     }
   }
-
   return streak;
 };
 
@@ -127,9 +138,14 @@ export const completionRate = (
   let count = 0;
 
   const dayBefore = (d: string, n: number): ISODate => {
-    const dt = new Date(d);
+    const [y, m, day] = d.split('-').map(Number);
+    // Create date in local time
+    const dt = new Date(y, (m as number) - 1, day);
     dt.setDate(dt.getDate() - n);
-    return dt.toISOString().slice(0, 10);
+    const year = dt.getFullYear();
+    const month = String(dt.getMonth() + 1).padStart(2, '0');
+    const dayStr = String(dt.getDate()).padStart(2, '0');
+    return `${year}-${month}-${dayStr}`;
   };
 
   for (let i = 0; i < pastDays; i++) {

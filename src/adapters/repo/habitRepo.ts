@@ -22,6 +22,30 @@ export const createHabitRepo = (app: App) => {
   }
 
   /**
+   * Convert history array to ISO date strings (YYYY-MM-DD only, no time/timezone).
+   * Handles Date objects from YAML parsing and string dates.
+   */
+  function normalizeHistory(history: any): ISODate[] {
+    if (!Array.isArray(history)) return [];
+    return history
+      .map((item: any) => {
+        if (item instanceof Date) {
+          // Extract only the date part (YYYY-MM-DD) using UTC to avoid timezone issues
+          const year = item.getUTCFullYear();
+          const month = String(item.getUTCMonth() + 1).padStart(2, '0');
+          const day = String(item.getUTCDate()).padStart(2, '0');
+          return `${year}-${month}-${day}`;
+        }
+        // If it's a string, extract only the YYYY-MM-DD part (strip time if present)
+        const str = String(item);
+        const match = str.match(/^(\d{4}-\d{2}-\d{2})/);
+        return match ? match[1] : str;
+      })
+      .filter((d: string) => /^\d{4}-\d{2}-\d{2}$/.test(d))
+      .sort();
+  }
+
+  /**
    * Parse YAML frontmatter from markdown content.
    * Returns the parsed object or null if no frontmatter found.
    */
@@ -60,9 +84,7 @@ export const createHabitRepo = (app: App) => {
             title: parsed.title ?? f.basename,
             trigger: parsed.trigger,
             schedule: parsed.schedule,
-            history: Array.isArray(parsed.history)
-              ? (parsed.history as ISODate[]).sort()
-              : [],
+            history: normalizeHistory(parsed.history),
             count: parsed.count,
           });
         } catch (e) {
@@ -169,9 +191,7 @@ export const createHabitRepo = (app: App) => {
         title: parsed.title ?? id,
         trigger: parsed.trigger,
         schedule: parsed.schedule,
-        history: Array.isArray(parsed.history)
-          ? (parsed.history as ISODate[]).sort()
-          : [],
+        history: normalizeHistory(parsed.history),
         count: parsed.count,
       };
     } catch (e) {
